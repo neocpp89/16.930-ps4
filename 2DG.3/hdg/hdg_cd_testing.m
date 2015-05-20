@@ -10,6 +10,7 @@ param = {kappa,c};
 source = @(p) 10*ones(size(p,1),1);
 dbc    = @(p) 0*ones(size(p,1),1);
 
+
 % HDG solver 
 [uh,qh,uhath]=hdg_solve(master,mesh,source,dbc,param);
 scaplot(mesh, uh);

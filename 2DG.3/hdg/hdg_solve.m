@@ -7,8 +7,9 @@ function [uh,qh,uhath]=hdg_solve(master,mesh,source,dbc,param)
 %      MESH:         Mesh structure
 %      SOURCE:       Source term
 %      DBC:          Dirichlet data 
-%      PARAM:        PARAM(1)   = diffusivity coefficient
-%                    PARAM(2:3) = convective velocity
+%      PARAM:        PARAM{1} = diffusivity coefficient
+%                    PARAM{2} = convective velocity [cx, cy]
+%                    PARAM{3} = stabilization parameter functionn tau(c,n,h)
 %      UH:           Approximate scalar variable
 %      QH:           Approximate flux
 %      UHATH:        Approximate trace                              
@@ -16,6 +17,12 @@ function [uh,qh,uhath]=hdg_solve(master,mesh,source,dbc,param)
 % equation parameters
 kappa = param{1};
 c = param{2};
+if(numel(param) >= 3)
+    tau = param{3};
+else
+    % default
+    tau = @(c,n,h) ones(size(n, 1), 1);
+end
 
 % map node to dof index (position in solution vector)
 
@@ -35,12 +42,25 @@ detJ = (xxi.*yet - xet.*yxi);
 nel = size(mesh.t, 1);
 nf = size(mesh.f, 1);
 ndof = nf * numel(master.ploc1d);
+ns = size(master.mass, 1);
+ns1d = size(master.ploc1d, 1);
+
+Ael = cell(nel, 1);
+Bel = cell(nel, 1);
+Cel = cell(nel, 1);
+Del = cell(nel, 1);
+Eel = cell(nel, 1);
+Fel = cell(nel, 1);
+Gel = cell(nel, 1);
+Mel = cell(nel, 1);
+QUel = cell(nel, 1);
+QU0l = cell(nel, 1);
+
+Hel = cell(nel, 1);
+Rel = cell(nel, 1);
 
 % build global matrix for trace values (global solve)
 for i=1:nel
-    ns = size(master.mass, 1);
-    ns1d = size(master.ploc1d, 1);
-
     % local matrices
     A = sparse(2*ns, 2*ns);
     B = sparse(2*ns, ns);
@@ -48,7 +68,10 @@ for i=1:nel
     D = sparse(ns, ns);
     E = sparse(ns, 3*ns1d);
     M = sparse(3*ns1d, 3*ns1d);
-    F = zeros(3*ns1d, 1);
+    F = zeros(ns, 1);
+    G = zeros(3*ns1d, 1);
+
+    R = zeros(2*ns, 1);
 
     % components of inverse jacobian
     xix = diag(yet(:,i) ./ detJ(:,i));
@@ -61,7 +84,8 @@ for i=1:nel
     dphidy = (dphidxi*xiy + dphideta*etay);
 
     % mass matrix if non-constant jacobians
-    mm = phi*diag(master.gwgh .* detJ(:, i))*phi';
+    svol = master.gwgh .* detJ(:, i);
+    mm = phi*diag(svol)*phi';
 
     elnn = 1:ns;
 
@@ -76,13 +100,35 @@ for i=1:nel
     B(elnn, elnn) = Bxx;
     B(ns+elnn, elnn) = Byy;
 
-    % have to go over edges for C, D, E, M matrices
+    % 'D' matrix (interior part), ((c.div)*u_h, w)
+    Dxx = c(1)*phi*dphidx';
+    Dyy = c(2)*phi*dphidy';
+    D(elnn, elnn) = Dxx + Dyy;
 
-    BT = B';
+    % 'F' vector, (f, w)
+    xg = phi*mesh.dgnodes(:,:,i);
+    F(elnn, 1) = phi*(svol.*source(xg));
+
+    % have to go over edges for C, D, E, M matrices
     for j=1:3
+        fidx = abs(mesh.t2f(i, j));
         edgenn = master.perm(:, j, 1); % only want ccw direction 
         tracenn = (j-1)*ns1d + (1:ns1d)';
         ep = mesh.dgnodes(edgenn, :, i);
+
+        if (mesh.f(fidx, 4) < 0)
+            % boundary
+            gd = dbc(xg(edgenn));
+
+            % should actually use a param for this
+            gn = zeros(size(gd));
+            M(tracenn, tracenn) = M(tracenn, tracenn) + speye(length(gn), length(gn));
+            G(tracenn) = G(tracenn) + phi1d*(gn + gd);
+
+            % don't further modify matrices
+            continue;
+        end
+
 
         % tangent vector
         xsg = dphi1d'*ep(:,1);
@@ -100,10 +146,48 @@ for i=1:nel
         C(edgenn, tracenn) = C(edgenn, tracenn) + Cx;
         C(ns + edgenn, tracenn) = C(ns + edgenn, tracenn) + Cy;
 
+        % 'D' matrix, <(tau - c.n)*u_h, w>
+        Dx = -phi1d*S*diag(c(1)*nepg(:, 1))*phi1d';
+        Dy = -phi1d*S*diag(c(2)*nepg(:, 2))*phi1d';
+        Dtau = phi1d*S*diag(tau(c, nepg, 1/nel))*phi1d';
+        D(edgenn, edgenn) = D(edgenn, edgenn) + (Dtau+Dx+Dy);
+
+        % 'E' matrix, <(tau - c.n)*u_hat, w>
+        E(edgenn, tracenn) = E(edgenn, tracenn) + (Dtau+Dx+Dy);
+
+        % 'M' matrix, <tau*u_hat, mu>
+        M(tracenn, tracenn) = M(tracenn, tracenn) + Dtau;
     end
+
+    % H and R (for global system for u_hat)
+    P = [A B; -B' D];
+    QU = P \ [C; E];
+    QU0 = P \ [R; F];
+    H = M + [C' -E']*QU;
+    R = G - [C' -E']*QU0;
+
+    %
+
+    % save the matrices in the cell array
+    Ael{i} = A;
+    Bel{i} = B;
+    Cel{i} = C;
+    Del{i} = D;
+    Eel{i} = E;
+    Fel{i} = F;
+    Gel{i} = G;
+    Mel{i} = M;
+    QUel{i} = QU;
+    QU0el{i} = QU0;
+
+    Hel{i} = H;
+    Rel{i} = R;
 end
 
-% schur complement and solve global matrix for u_hat
+% generate global node numbering for u_hat
+nn = zeros(3*ns1d,nel);
+
+% solve global matrix for u_hat
 
 
 % local solve on each element using traces
