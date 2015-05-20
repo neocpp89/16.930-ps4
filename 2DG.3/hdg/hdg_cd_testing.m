@@ -1,15 +1,14 @@
 porder = 2;
-ngrid  = 9;
+ngrid  = 10;
 
 mesh   = mkmesh_square(ngrid,ngrid,porder);
 master = mkmaster(mesh,2*porder);
 
 kappa = 1;
-c = [10,10];
+c = 0*[10,10];
 param = {kappa,c};
 source = @(p) 10*ones(size(p,1),1);
 dbc    = @(p) 0*ones(size(p,1),1);
-
 
 % HDG solver 
 [uh,qh,uhath]=hdg_solve(master,mesh,source,dbc,param);

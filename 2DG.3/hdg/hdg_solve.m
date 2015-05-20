@@ -116,20 +116,6 @@ for i=1:nel
         tracenn = (j-1)*ns1d + (1:ns1d)';
         ep = mesh.dgnodes(edgenn, :, i);
 
-        if (mesh.f(fidx, 4) < 0)
-            % boundary
-            gd = dbc(xg(edgenn));
-
-            % should actually use a param for this
-            gn = zeros(size(gd));
-            M(tracenn, tracenn) = M(tracenn, tracenn) + speye(length(gn), length(gn));
-            G(tracenn) = G(tracenn) + phi1d*(gn + gd);
-
-            % don't further modify matrices
-            continue;
-        end
-
-
         % tangent vector
         xsg = dphi1d'*ep(:,1);
         ysg = dphi1d'*ep(:,2);
@@ -139,6 +125,19 @@ for i=1:nel
         nepg = [ysg ./ dsg, -xsg ./ dsg];
         scale = (master.gw1d .* dsg);
         S = diag(scale);
+
+        if (mesh.f(fidx, 4) < 0)
+            % boundary
+            gd = dbc(xg(edgenn));
+
+            % should actually use a param for this
+            gn = zeros(size(gd));
+            M(tracenn, tracenn) = M(tracenn, tracenn) + phi1d*S*phi1d';
+            G(tracenn) = G(tracenn) + phi1d*(gn + gd);
+
+            % don't further modify matrices
+            continue;
+        end
 
         % 'C' matrix, <u_hat, v.n>
         Cx = phi1d*S*diag(nepg(:, 1))*phi1d';
@@ -186,10 +185,38 @@ end
 
 % generate global node numbering for u_hat
 nn = zeros(3*ns1d,nel);
+for i=1:nel
+    for j=1:3
+        fidx = mesh.t2f(i,j);
+        tracenn = (j-1)*ns1d + (1:ns1d)';
+        if (fidx > 0)
+            nn(tracenn,i) = (fidx-1)*ns1d + (1:ns1d)';
+        else 
+            nn(tracenn,i) = flipud((-fidx-1)*ns1d + (1:ns1d)');
+        end
+    end
+end
 
-% solve global matrix for u_hat
+nn
 
+% assemble and solve global matrix for u_hat
+Hglob = sparse(3*ns1d*nel, 3*ns1d*nel);
+Rglob = zeros(3*ns1d*nel, 1);
+for i=1:nel
+    nnel = nn(:, i);
+    Hglob(nnel, nnel) = Hglob(nnel, nnel) + Hel{i};
+    Rglob(nnel) = Rglob(nnel) + Rel{i};
+end
+
+uhath = Hglob \ Rglob;
 
 % local solve on each element using traces
+uh = zeros(ns, 1, nel);
+qh = zeros(ns, 2, nel);
 for i=1:nel
+    nnel = nn(:, i);
+    quvec = QU0 + QU*uhath(nnel, 1);
+    qh(:, 1, i) = quvec((1:ns), 1);
+    qh(:, 2, i) = quvec((1:ns) + ns, 1);
+    uh(:, 1, i) = quvec((1:ns) + 2*ns, 1);
 end
