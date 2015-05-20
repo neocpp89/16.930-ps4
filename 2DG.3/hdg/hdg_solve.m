@@ -24,8 +24,6 @@ else
     tau = @(c,n,h) ones(size(n, 1), 1);
 end
 
-% map node to dof index (position in solution vector)
-
 phi1d(:,:) = master.sh1d(:,1,:);
 dphi1d(:,:) = master.sh1d(:,2,:);
 phi(:,:) = master.shap(:,1,:);
@@ -95,18 +93,18 @@ for i=1:nel
     A(ns+elnn, ns+elnn) = A1d; % yy
 
     % 'B' matrix, (u_h, div(v))
-    Bxx = dphidx*phi';
-    Byy = dphidy*phi';
+    Bxx = dphidx*diag(svol)*phi';
+    Byy = dphidy*diag(svol)*phi';
     B(elnn, elnn) = Bxx;
     B(ns+elnn, elnn) = Byy;
 
     % 'D' matrix (interior part), ((c.div)*u_h, w)
-    Dxx = c(1)*phi*dphidx';
-    Dyy = c(2)*phi*dphidy';
+    Dxx = c(1)*phi*diag(svol)*dphidx';
+    Dyy = c(2)*phi*diag(svol)*dphidy';
     D(elnn, elnn) = Dxx + Dyy;
 
     % 'F' vector, (f, w)
-    xg = phi*mesh.dgnodes(:,:,i);
+    xg = phi'*mesh.dgnodes(:,:,i);
     F(elnn, 1) = phi*(svol.*source(xg));
 
     % have to go over edges for C, D, E, M matrices
@@ -133,7 +131,7 @@ for i=1:nel
             % should actually use a param for this
             gn = zeros(size(gd));
             M(tracenn, tracenn) = M(tracenn, tracenn) + phi1d*S*phi1d';
-            G(tracenn) = G(tracenn) + phi1d*(gn + gd);
+            G(tracenn) = G(tracenn) + phi1d*S*(gn + gd);
 
             % don't further modify matrices
             continue;
@@ -165,8 +163,6 @@ for i=1:nel
     H = M + [C' -E']*QU;
     R = G - [C' -E']*QU0;
 
-    %
-
     % save the matrices in the cell array
     Ael{i} = A;
     Bel{i} = B;
@@ -192,12 +188,10 @@ for i=1:nel
         if (fidx > 0)
             nn(tracenn,i) = (fidx-1)*ns1d + (1:ns1d)';
         else 
-            nn(tracenn,i) = flipud((-fidx-1)*ns1d + (1:ns1d)');
+            nn(tracenn,i) = (-fidx-1)*ns1d + (ns1d:-1:1)';
         end
     end
 end
-
-nn
 
 % assemble and solve global matrix for u_hat
 Hglob = sparse(3*ns1d*nel, 3*ns1d*nel);
