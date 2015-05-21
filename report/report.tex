@@ -14,13 +14,15 @@
 
 \section{Q1}
 Surprisingly, the answer is provided in the reference material\cite{nguyen}.
-The choice of $\tau$ which reduces to the regular DG method is
+The choice of $\tau$ which reduces to the regular DG method is given by
 \begin{align}
+\tau = \frac{1}{2} \left( | \mathbf{c} \cdot \mathbf{n} | + \mathbf{c} \cdot \mathbf{n} \right)
 \end{align}
 
 \section{Convergence plots for Structured Case}
 I am sorry about this, but I realized too late that I followed the notes a bit too closely and subsequently $\mathbf{q}$ approximates $\kappa \nabla u$ instead of $\nabla u$.
 Happily, this does not affect this test in particular (since $\kappa = 1$).
+The postprocessing also assumes $\kappa = 1$, since I did not want to modify the function signature, so it truly is applied on the gradient of $u$.
 
 In figure \ref{fig:cs} we see the expected convergence behavior (p+1) for u when selecting $\tau = 1$ or $1/h$.
 However, the rate drops to order p for $\tau = h$.
