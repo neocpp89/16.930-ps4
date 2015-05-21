@@ -1,6 +1,6 @@
 clear all; close all; clc;
 % common parameters
-c = 1e2*[1,1];
+c = [1,1];
 source = @(p) ones(size(p,1), 1);
 
 % XXX: should we plot the acutal solution? 
@@ -8,7 +8,7 @@ plot_figures = 1;
 p = [1];
 n = [0:2]; % number of refinements
 % kappas = [1, 1e-2, 1e-4];
-kappas = [1];
+kappas = [1e-2];
 
 np = numel(p);
 nn = numel(n);
@@ -22,20 +22,6 @@ for i=1:np
     meshseries{i, 1} = m;
     mesh1series{i, 1} = m1;
     for j=2:nn
-%{
-        fd=@(p) sqrt(sum(p.^2,2))-1;
-        mj = m;
-        [mj.p, mj.t] = uniref(mj.p, mj.t, n(j));
-        [mj.f,mj.t2f] = mkt2f(mj.t);        
-        mj.dgnodes = createnodes(mj, fd);
-        meshseries{i, j} = mj;
-
-        mj1 = m1;
-        [mj1.p, mj1.t] = uniref(mj1.p, mj1.t, n(j));
-        [mj1.f, mj1.t2f] = mkt2f(mj1.t);        
-        mj1.dgnodes = createnodes(mj1, fd);
-        mesh1series{i, j} = mj1;
-%}
         meshseries{i, j} = refinemesh(m, n(j));
         mesh1series{i, j} = refinemesh(m1, n(j));
     end
@@ -60,11 +46,17 @@ for i=1:np
             param = {kappa,c, taufn};
 
             % This is actually a lie, it only does homogeneous solutions
-            % (dirichlet does not quite work right now).
+            % (dirichlet does not work correctly at the moment).
             dbc    = @(p) 0*ones(size(p,1),1);
 
             % HDG solver 
             [uh,qh,uhath]=hdg_solve(master,mesh,source,dbc,param);
+
+            % XXX: this is a terrible hack, but since I know kappa is constant
+            % and I don't want to test the solver again (should have modularized...)
+            % I can just do grad(u) = q_new = q_old / kappa.
+            % The preprocessor expects this form, since it doesn't take this parameter.
+            qh = qh / kappa;
 
             % HDG postprocessing 
             mesh1   = mesh1series{i, j};
