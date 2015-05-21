@@ -5,40 +5,42 @@ source = @(p) ones(size(p,1), 1);
 
 % XXX: should we plot the acutal solution? 
 plot_figures = 1;
-p = [1];
-n = [0 3]; % number of refinements
-% kappas = [1, 1e-2, 1e-4];
-kappas = [1e-4];
+p = [1, 3];
+n = [0:2]; % number of refinements
+kappas = [1, 1e-1, 1e-2];
 
 np = numel(p);
 nn = numel(n);
 nk = numel(kappas);
 
+[m,mplus] = mkmesh_mycircle(0.06, min(p), max(p)-min(p)+1);
+plist = min(p):(max(p)+1);
+
 meshseries = cell(np, nn);
 mesh1series = cell(np, nn);
 
 for i=1:np
-    [m,m1] = mkmesh_mycircle(0.07, p(i));
-    meshseries{i, 1} = m;
-    mesh1series{i, 1} = m1;
+    mi = find(plist == p(i));
+    meshseries{i, 1} = mplus{mi};
+    mesh1series{i, 1} = mplus{mi+1};
     for j=2:nn
-%{
-        fd=@(p) sqrt(sum(p.^2,2))-1;
-        mj = m;
-        [mj.p, mj.t] = uniref(mj.p, mj.t, n(j));
-        [mj.f,mj.t2f] = mkt2f(mj.t);        
-        mj.dgnodes = createnodes(mj, fd);
-        meshseries{i, j} = mj;
-
-        mj1 = m1;
-        [mj1.p, mj1.t] = uniref(mj1.p, mj1.t, n(j));
-        [mj1.f, mj1.t2f] = mkt2f(mj1.t);        
-        mj1.dgnodes = createnodes(mj1, fd);
-        mesh1series{i, j} = mj1;
-%}
-        meshseries{i, j} = refinemesh(m, n(j));
-        mesh1series{i, j} = refinemesh(m1, n(j));
+        meshseries{i, j} = refinemesh(mplus{mi}, n(j));
+        mesh1series{i, j} = refinemesh(mplus{mi+1}, n(j));
     end
+end
+
+for i=1:nn
+    h = figure;
+    set(h, 'units', 'inches', 'position', [1 1 4 4])
+    set(h, 'PaperUnits','centimeters');
+    set(h, 'Units','centimeters');
+    pos=get(h,'Position');
+    set(h, 'PaperSize', [pos(3) pos(4)]);
+    set(h, 'PaperPositionMode', 'manual');
+    set(h, 'PaperPosition',[0 0 pos(3) pos(4)]);
+    meshplot(meshseries{1,i});
+    title(sprintf('Mesh at refinement level %d', n(i)));
+    print(sprintf('../../report/um_%d.png', i), '-dpng');
 end
 
 errs = zeros(np, nn, nk);
@@ -72,10 +74,28 @@ for i=1:np
             [ustarh]=hdg_postprocess(master,mesh,master1,mesh1,uh,qh);
 
             if (plot_figures == 1)
-                figure; scaplot(mesh, uh);
-                title(sprintf('u N=%d, p=%d, fn=%d', n(j), p(i), k));
-                figure; scaplot(mesh1, ustarh);
-                title(sprintf('u^* N=%d, p=%d, fn=%d', n(j), p(i), k));
+                h = figure;
+                set(h, 'units', 'inches', 'position', [1 1 4 4])
+                set(h, 'PaperUnits','centimeters');
+                set(h, 'Units','centimeters');
+                pos=get(h,'Position');
+                set(h, 'PaperSize', [pos(3) pos(4)]);
+                set(h, 'PaperPositionMode', 'manual');
+                set(h, 'PaperPosition',[0 0 pos(3) pos(4)]);
+                scaplot(mesh, uh);
+                title(sprintf('Solution u\nrefinement=%d, p=%d, \\kappa=%g', n(j), p(i), kappa));
+                print(sprintf('../../report/umu_%d%d%d.png', i, j, k), '-dpng');
+                h = figure;
+                set(h, 'units', 'inches', 'position', [1 1 4 4])
+                set(h, 'PaperUnits','centimeters');
+                set(h, 'Units','centimeters');
+                pos=get(h,'Position');
+                set(h, 'PaperSize', [pos(3) pos(4)]);
+                set(h, 'PaperPositionMode', 'manual');
+                set(h, 'PaperPosition',[0 0 pos(3) pos(4)]);
+                scaplot(mesh1, ustarh);
+                title(sprintf('Solution u^*\nrefinement=%d, p=%d, \\kappa=%g', n(j), p(i), kappa));
+                print(sprintf('../../report/umustar_%d%d%d.png', i, j, k), '-dpng');
             end
         end
     end

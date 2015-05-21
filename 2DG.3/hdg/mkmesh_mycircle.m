@@ -1,4 +1,4 @@
-function [mesh, mesh1] = mkmesh_mycircle(siz,porder)
+function [mesh, meshplus] = mkmesh_mycircle(siz,porder,padditional)
 %MKMESH_SQUARE Creates 2D mesh data structure for unit circle using DISTMESH2D.
 %   MESH=MKMESH_SQUARE(SIZ,PORDER)
 %
@@ -12,9 +12,10 @@ function [mesh, mesh1] = mkmesh_mycircle(siz,porder)
 if nargin>0 & siz == 0.0, siz=0.4; end
 if nargin<1, siz=0.4; end
 if nargin<2, porder=1; end
+if nargin<3, padditional=3; end
 
 fd=@(p) sqrt(sum(p.^2,2))-1;
-fh=@(p) (1.2 - 0.2*(p(:,1)+p(:,2)) - 4*dcircle(p,0,0,1));
+fh=@(p) (1.3 - 0.3*(p(:,1)+p(:,2)) - 4*dcircle(p,0,0,1))/5;
 [mesh.p,mesh.t] = distmesh2d(fd,fh,siz,[-1,-1;1,1],[]);
 [mesh.p,mesh.t] = fixmesh(mesh.p,mesh.t);
 [mesh.f,mesh.t2f] = mkt2f(mesh.t);
@@ -31,8 +32,12 @@ mesh.porder = porder;
 [mesh.plocal,mesh.tlocal] = uniformlocalpnts(mesh.porder);
 mesh.dgnodes = createnodes(mesh,fd);
 
-mesh1 = mesh;
-mesh1.porder = porder+1;
-[mesh1.plocal,mesh1.tlocal] = uniformlocalpnts(mesh1.porder);
-mesh1.dgnodes = createnodes(mesh1,fd);
-
+meshplus = cell(1+padditional, 1);
+for i=1:padditional
+    mesh1 = mesh;
+    mesh1.porder = porder+i;
+    [mesh1.plocal,mesh1.tlocal] = uniformlocalpnts(mesh1.porder);
+    mesh1.dgnodes = createnodes(mesh1,fd);
+    meshplus{i+1} = mesh1;
+end
+meshplus{1} = mesh;
