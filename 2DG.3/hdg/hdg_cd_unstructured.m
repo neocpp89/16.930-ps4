@@ -13,7 +13,7 @@ np = numel(p);
 nn = numel(n);
 nk = numel(kappas);
 
-[m,mplus] = mkmesh_mycircle(0.06, min(p), max(p)-min(p)+1);
+[m,mplus] = mkmesh_unstructured(0.06, min(p), max(p)-min(p)+1);
 plist = min(p):(max(p)+1);
 
 meshseries = cell(np, nn);
