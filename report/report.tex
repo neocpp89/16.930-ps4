@@ -132,8 +132,9 @@ Before showing the results, we will explain our choice for parameter of $\tau$.
 We followed the recommendation in the paper \cite{nguyen} and picked the centered scheme due to its simplicity.
 Specificially, it is single valued, with an expression given by
 \begin{align}
-\tau = |\mathbf{c} \cdot \mathbf{n}| + \frac{\kappa}{0.2}
+\tau = |\mathbf{c} \cdot \mathbf{n}| + \frac{\kappa}{0.2}.
 \end{align}
+The value of 0.2 is supposed to be a length-scale relating to diffusion, but we chose this essentially arbitrarily (a previous coarse mesh had this as a few element lengths).
 
 Perhaps unsurprisingly, when diffusion dominates, the boundary layer is large and is easily captured even by the coarsest mesh.
 Purely relying on the visualization we can barely tell the difference between the postprocessed solutions (the unprocessed solutions are close but distinct), as shown in figure \ref{fig:u100} and \ref{fig:ustar100}.
@@ -166,7 +167,7 @@ Purely relying on the visualization we can barely tell the difference between th
 \label{fig:ustar100}
 \end{figure}
 
-When convection becomes more dominant, we start to see the effects of a boundary layer in the solution.
+When convection becomes more dominant, we start to see the effects of a boundary layer in the solution (figures \ref{fig:u10} and \ref{fig:ustar10}).
 While at $\kappa = 0.1$ ($\mathbf{c}$ unchanged) the boundary layer in the solution still looks reasonable, we are able to see more of a difference now between refinement levels and between element orders.
 However, once the postprocessing is applied, it again becomes difficult to discern many differences between the simulations.
 
@@ -181,7 +182,7 @@ However, once the postprocessing is applied, it again becomes difficult to disce
 \includegraphics[scale=0.7]{umu_232.png}
 \end{tabular}
 \caption{The mixed case with $\kappa = 0.1$. Solutions from the p=1 elements are shown on the left while the p=3 elements are on the right.}
-\label{fig:u100}
+\label{fig:u10}
 \end{figure}
 
 \begin{figure}[!ht]
@@ -195,10 +196,10 @@ However, once the postprocessing is applied, it again becomes difficult to disce
 \includegraphics[scale=0.7]{umustar_232.png}
 \end{tabular}
 \caption{The mixed case with $\kappa = 0.1$. Postprocessed solutions from the p=1 elements are shown on the left while the p=3 elements are on the right.}
-\label{fig:ustar100}
+\label{fig:ustar10}
 \end{figure}
 
-In the convection-dominated case, we see a very clear boundary layer, which causes us to generate a poor solution when the mesh is coarse (note the colorbar scale).
+In the convection-dominated case, we see a very clear boundary layer, which causes us to generate a poor solution when the mesh is coarse (see figures \ref{fig:u1} and \ref{fig:ustar1} and note the colorbar scale).
 Reducing the element size until the boundary layer fits results in dramatic improvement.
 We also noticed that the postprocessing does not seem to help as much in this case, although it does seem to make a small improvement.
 We suspect this is because the postprocessing step does not take into account any of the convection (only diffusion), and note that there is no dimensionless group relating the two in the postprocessing equations.
@@ -215,7 +216,7 @@ This is okay when the convection is swamped out anyways by diffusion, but it is 
 \includegraphics[scale=0.7]{umu_233.png}
 \end{tabular}
 \caption{The convection-dominated case with $\kappa = 0.01$. Solutions from the p=1 elements are shown on the left while the p=3 elements are on the right.}
-\label{fig:u100}
+\label{fig:u1}
 \end{figure}
 
 \begin{figure}[!ht]
@@ -229,7 +230,7 @@ This is okay when the convection is swamped out anyways by diffusion, but it is 
 \includegraphics[scale=0.7]{umustar_233.png}
 \end{tabular}
 \caption{The convection-dominated case with $\kappa = 0.01$. Postprocessed solutions from the p=1 elements are shown on the left while the p=3 elements are on the right.}
-\label{fig:ustar100}
+\label{fig:ustar1}
 \end{figure}
 \begin{thebibliography}{9}
 \bibitem{nguyen}
