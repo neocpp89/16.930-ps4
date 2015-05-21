@@ -94,7 +94,7 @@ for k=1:nt
     set(gca, 'YScale', 'log');
     axis equal square;
     grid on;
-    legend(gca, 'show', 'location', 'best');
+    legend(gca, 'show', 'location', 'southwest');
     print(sprintf('../../report/cs_%d.png', k), '-dpng');
 end
 
@@ -124,7 +124,7 @@ for k=1:nt
     set(gca, 'YScale', 'log');
     axis equal square;
     grid on;
-    legend(gca, 'show', 'location', 'best');
+    legend(gca, 'show', 'location', 'southwest');
     print(sprintf('../../report/csqx_%d.png', k), '-dpng');
 end
 
@@ -154,7 +154,7 @@ for k=1:nt
     set(gca, 'YScale', 'log');
     axis equal square;
     grid on;
-    legend(gca, 'show', 'location', 'best');
+    legend(gca, 'show', 'location', 'southwest');
     print(sprintf('../../report/csqy_%d.png', k), '-dpng');
 end
 
@@ -184,6 +184,6 @@ for k=1:nt
     set(gca, 'YScale', 'log');
     axis equal square;
     grid on;
-    legend(gca, 'show', 'location', 'best');
+    legend(gca, 'show', 'location', 'southwest');
     print(sprintf('../../report/cspp_%d.png', k), '-dpng');
 end
