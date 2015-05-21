@@ -25,6 +25,9 @@ nn = numel(n);
 nt = numel(taufns);
 
 errs = zeros(np, nn, nt);
+errsqx = zeros(np, nn, nt);
+errsqy = zeros(np, nn, nt);
+errspp = zeros(np, nn, nt);
 for i=1:np
     for j=1:nn
         for k=1:nt
@@ -45,11 +48,15 @@ for i=1:np
             [uh,qh,uhath]=hdg_solve(master,mesh,source,dbc,param);
 
             errs(i,j,k) = l2err(mesh, master, uh, exact_u);
+            errsqx(i,j,k) = l2err(mesh, master, qh(:,1,:), exact_qx);
+            errsqy(i,j,k) = l2err(mesh, master, qh(:,2,:), exact_qy);
 
             % HDG postprocessing 
             mesh1   = mkmesh_square(ngrid,ngrid,porder+1);
             master1 = mkmaster(mesh1,2*(porder+1));
             [ustarh]=hdg_postprocess(master,mesh,master1,mesh1,uh,qh);
+
+            errspp(i,j,k) = l2err(mesh1, master1, ustarh, exact_u);
 
             if (plot_figures == 1)
                 figure; scaplot(mesh, uh);
@@ -61,6 +68,8 @@ for i=1:np
     end
 end
 
+% u
+fprintf('u\n');
 for k=1:nt
     h = figure;
     set(h, 'units', 'inches', 'position', [1 1 4 4])
@@ -87,4 +96,94 @@ for k=1:nt
     grid on;
     legend(gca, 'show', 'location', 'best');
     print(sprintf('../../report/cs_%d.png', k), '-dpng');
+end
+
+% qx
+fprintf('qx\n');
+for k=1:nt
+    h = figure;
+    set(h, 'units', 'inches', 'position', [1 1 4 4])
+    set(h, 'PaperUnits','centimeters');
+    set(h, 'Units','centimeters');
+    pos=get(h,'Position');
+    set(h, 'PaperSize', [pos(3) pos(4)]);
+    set(h, 'PaperPositionMode', 'manual');
+    set(h, 'PaperPosition',[0 0 pos(3) pos(4)]);
+    hold all;
+    for i=1:np
+        y = squeeze(errsqx(i,:,k))';
+        loglog(n, y, 'DisplayName', sprintf('p = %d', p(i)));
+        pf = polyfit(log(n(end-1:end))', log(y(end-1:end)), 1);
+        fprintf('%s - Order %d has rate %g.\n', taulabels{k}, p(i), pf(1));
+    end
+    hold off;
+    title(sprintf('Convergence of q_x\n(Structured, \\tau = %s)', taulabels{k}));
+    xlabel('N');
+    ylabel('L_2 error');
+    set(gca, 'XScale', 'log');
+    set(gca, 'YScale', 'log');
+    axis equal square;
+    grid on;
+    legend(gca, 'show', 'location', 'best');
+    print(sprintf('../../report/csqx_%d.png', k), '-dpng');
+end
+
+% qy
+fprintf('qy\n');
+for k=1:nt
+    h = figure;
+    set(h, 'units', 'inches', 'position', [1 1 4 4])
+    set(h, 'PaperUnits','centimeters');
+    set(h, 'Units','centimeters');
+    pos=get(h,'Position');
+    set(h, 'PaperSize', [pos(3) pos(4)]);
+    set(h, 'PaperPositionMode', 'manual');
+    set(h, 'PaperPosition',[0 0 pos(3) pos(4)]);
+    hold all;
+    for i=1:np
+        y = squeeze(errsqy(i,:,k))';
+        loglog(n, y, 'DisplayName', sprintf('p = %d', p(i)));
+        pf = polyfit(log(n(end-1:end))', log(y(end-1:end)), 1);
+        fprintf('%s - Order %d has rate %g.\n', taulabels{k}, p(i), pf(1));
+    end
+    hold off;
+    title(sprintf('Convergence of q_y\n(Structured, \\tau = %s)', taulabels{k}));
+    xlabel('N');
+    ylabel('L_2 error');
+    set(gca, 'XScale', 'log');
+    set(gca, 'YScale', 'log');
+    axis equal square;
+    grid on;
+    legend(gca, 'show', 'location', 'best');
+    print(sprintf('../../report/csqy_%d.png', k), '-dpng');
+end
+
+% u*
+fprintf('u*\n');
+for k=1:nt
+    h = figure;
+    set(h, 'units', 'inches', 'position', [1 1 4 4])
+    set(h, 'PaperUnits','centimeters');
+    set(h, 'Units','centimeters');
+    pos=get(h,'Position');
+    set(h, 'PaperSize', [pos(3) pos(4)]);
+    set(h, 'PaperPositionMode', 'manual');
+    set(h, 'PaperPosition',[0 0 pos(3) pos(4)]);
+    hold all;
+    for i=1:np
+        y = squeeze(errspp(i,:,k))';
+        loglog(n, y, 'DisplayName', sprintf('p = %d', p(i)));
+        pf = polyfit(log(n(end-1:end))', log(y(end-1:end)), 1);
+        fprintf('%s - Order %d has rate %g.\n', taulabels{k}, p(i), pf(1));
+    end
+    hold off;
+    title(sprintf('Convergence of u^*\n(Structured, \\tau = %s)', taulabels{k}));
+    xlabel('N');
+    ylabel('L_2 error');
+    set(gca, 'XScale', 'log');
+    set(gca, 'YScale', 'log');
+    axis equal square;
+    grid on;
+    legend(gca, 'show', 'location', 'best');
+    print(sprintf('../../report/cspp_%d.png', k), '-dpng');
 end
