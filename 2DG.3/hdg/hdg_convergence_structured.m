@@ -4,11 +4,10 @@ kappa = 1;
 c = 0*[1,1];
 source = @(p) 2*pi^2*sin(pi*p(:,1)).*sin(pi*p(:,2));
 
-plot_figures = 1;
-% p = [1, 2, 3];
-% n = [9, 17, 33]; % number of elements per row is n-1
-p = 1;
-n = [8];
+% XXX: should we plot the acutal solution? 
+plot_figures = 0;
+p = [1, 2, 3];
+n = [9, 17, 33, 41]; % number of elements per row is n-1
 taufns = {@(c,n,h) h*ones(size(n,1),1), ...
     @(c,n,h) ones(size(n,1),1), ...
     @(c,n,h) (1/h)*ones(size(n,1),1)};
@@ -25,7 +24,7 @@ np = numel(p);
 nn = numel(n);
 nt = numel(taufns);
 
-errs = zeros(np, nn, nt)
+errs = zeros(np, nn, nt);
 for i=1:np
     for j=1:nn
         for k=1:nt
@@ -45,7 +44,7 @@ for i=1:np
             % HDG solver 
             [uh,qh,uhath]=hdg_solve(master,mesh,source,dbc,param);
 
-            errs(i,j,k) = l2err(mesh, master, uh, exact_u)
+            errs(i,j,k) = l2err(mesh, master, uh, exact_u);
 
             % HDG postprocessing 
             mesh1   = mkmesh_square(ngrid,ngrid,porder+1);
@@ -62,9 +61,30 @@ for i=1:np
     end
 end
 
-for i=1:np
-    for j=1:nn
-        for k=1:nt
-        end
+for k=1:nt
+    h = figure;
+    set(h, 'units', 'inches', 'position', [1 1 4 4])
+    set(h, 'PaperUnits','centimeters');
+    set(h, 'Units','centimeters');
+    pos=get(h,'Position');
+    set(h, 'PaperSize', [pos(3) pos(4)]);
+    set(h, 'PaperPositionMode', 'manual');
+    set(h, 'PaperPosition',[0 0 pos(3) pos(4)]);
+    hold all;
+    for i=1:np
+        y = squeeze(errs(i,:,k))';
+        loglog(n, y, 'DisplayName', sprintf('p = %d', p(i)));
+        pf = polyfit(log(n(end-1:end))', log(y(end-1:end)), 1);
+        fprintf('%s - Order %d has rate %g.\n', taulabels{k}, p(i), pf(1));
     end
+    hold off;
+    title(sprintf('Convergence of u\n(Structured, \\tau = %s)', taulabels{k}));
+    xlabel('N');
+    ylabel('L_2 error');
+    set(gca, 'XScale', 'log');
+    set(gca, 'YScale', 'log');
+    axis equal square;
+    grid on;
+    legend(gca, 'show', 'location', 'best');
+    print(sprintf('../../report/cs_%d.png', k), '-dpng');
 end
