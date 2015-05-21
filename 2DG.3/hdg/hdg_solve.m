@@ -65,6 +65,7 @@ for i=1:nel
     C = zeros(2*ns, 3*ns1d);
     D = zeros(ns, ns);
     E = zeros(ns, 3*ns1d);
+    ET = zeros(3*ns1d, ns);
     M = zeros(3*ns1d, 3*ns1d);
     F = zeros(ns, 1);
     G = zeros(3*ns1d, 1);
@@ -97,9 +98,9 @@ for i=1:nel
     B(elnn, elnn) = Bxx;
     B(ns+elnn, elnn) = Byy;
 
-    % 'D' matrix (interior part), ((c.div)*u_h, w)
-    Dxx = c(1)*phi*diag(svol)*dphidx';
-    Dyy = c(2)*phi*diag(svol)*dphidy';
+    % 'D' matrix (interior part), (c*u_h, div(w))
+    Dxx = -c(1)*dphidx*diag(svol)*phi';
+    Dyy = -c(2)*dphidy*diag(svol)*phi';
     D(elnn, elnn) = Dxx + Dyy;
 
     % 'F' vector, (f, w)
@@ -124,25 +125,26 @@ for i=1:nel
         scale = (master.gw1d .* dsg);
         S = diag(scale);
 
-
         % 'C' matrix, <u_hat, v.n>
         Cx = phi1d*S*diag(nepg(:, 1))*phi1d';
         Cy = phi1d*S*diag(nepg(:, 2))*phi1d';
         C(edgenn, tracenn) = C(edgenn, tracenn) + Cx;
         C(ns + edgenn, tracenn) = C(ns + edgenn, tracenn) + Cy;
 
-        % 'D' matrix, <(tau - c.n)*u_h, w>
-        Dx = -phi1d*S*diag(c(1)*nepg(:, 1))*phi1d';
-        Dy = -phi1d*S*diag(c(2)*nepg(:, 2))*phi1d';
-        Dtau = phi1d*S*diag(tau(c, nepg, 1/nel))*phi1d';
-        T = phi1d*diag(tau(c, nepg, 1/nel) .* scale)*phi1d';
-        D(edgenn, edgenn) = D(edgenn, edgenn) + (Dtau+Dx+Dy);
+        % 'D' matrix, <tau*u_h, w>
+        T = phi1d*S*diag(tau(c, nepg, 1/nel))*phi1d';
+        cdotn = nepg*c';
+        TC = phi1d*diag((tau(c, nepg, 1/nel) - cdotn).* scale)*phi1d';
+        D(edgenn, edgenn) = D(edgenn, edgenn) + T;
 
         % 'E' matrix, <(tau - c.n)*u_hat, w>
-        E(edgenn, tracenn) = E(edgenn, tracenn) + (Dtau+Dx+Dy);
+        E(edgenn, tracenn) = E(edgenn, tracenn) + TC;
 
-        % 'M' matrix, <tau*u_hat, mu>
-        M(tracenn, tracenn) = M(tracenn, tracenn) + Dtau;
+        % 'ET' matrix, <tau*u_h, mu>
+        ET(tracenn, edgenn) = ET(tracenn, edgenn) + T;
+
+        % 'M' matrix, <(tau - c.n)*u_hat, mu>
+        M(tracenn, tracenn) = M(tracenn, tracenn) + TC;
 
         if (mesh.f(fidx, 4) < 0)
             % boundary
@@ -159,8 +161,8 @@ for i=1:nel
     P = [A B; -B' D];
     QU = P \ [C; E];
     QU0 = P \ [R; F];
-    H = M + [C' -E']*QU;
-    R = G - [C' -E']*QU0;
+    H = M + [C' -ET]*QU;
+    R = G - [C' -ET]*QU0;
 
     % save the matrices in the cell array
     Ael{i} = A;

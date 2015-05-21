@@ -1,13 +1,15 @@
 clear all; close all; clc;
 porder = 1;
-ngrid  = 20;
+ngrid  = 4;
 
 mesh   = mkmesh_square(ngrid,ngrid,porder);
 master = mkmaster(mesh,2*porder);
 
 kappa = 1;
 c = 0*[10,10];
-param = {kappa,c, @(c,n,h) ones(size(n,1), 1)};
+taufn = @(c,n,h) ones(size(n,1), 1);
+% taufn = @(c,n,h) 0.5*(abs(n*c') + n*c');
+param = {kappa,c, taufn};
 source = @(p) 2*pi^2*sin(pi*p(:,1)).*sin(pi*p(:,2));
 dbc    = @(p) 0*ones(size(p,1),1);
 
