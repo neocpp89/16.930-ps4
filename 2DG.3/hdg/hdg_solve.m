@@ -42,15 +42,8 @@ nf = size(mesh.f, 1);
 ndof = nf * numel(master.ploc1d);
 ns = size(master.mass, 1);
 ns1d = size(master.ploc1d, 1);
+h = 1/sqrt(nel/2); % estimate if structured...
 
-Ael = cell(nel, 1);
-Bel = cell(nel, 1);
-Cel = cell(nel, 1);
-Del = cell(nel, 1);
-Eel = cell(nel, 1);
-Fel = cell(nel, 1);
-Gel = cell(nel, 1);
-Mel = cell(nel, 1);
 QUel = cell(nel, 1);
 QU0l = cell(nel, 1);
 
@@ -132,9 +125,9 @@ for i=1:nel
         C(ns + edgenn, tracenn) = C(ns + edgenn, tracenn) + Cy;
 
         % 'D' matrix, <tau*u_h, w>
-        T = phi1d*S*diag(tau(c, nepg, 1/nel))*phi1d';
+        T = phi1d*S*diag(tau(c, nepg, h))*phi1d';
         cdotn = nepg*c';
-        TC = phi1d*diag((tau(c, nepg, 1/nel) - cdotn).* scale)*phi1d';
+        TC = phi1d*diag((tau(c, nepg, h) - cdotn).* scale)*phi1d';
         D(edgenn, edgenn) = D(edgenn, edgenn) + T;
 
         % 'E' matrix, <(tau - c.n)*u_hat, w>
@@ -165,14 +158,6 @@ for i=1:nel
     R = G - [C' -ET]*QU0;
 
     % save the matrices in the cell array
-    Ael{i} = A;
-    Bel{i} = B;
-    Cel{i} = C;
-    Del{i} = D;
-    Eel{i} = E;
-    Fel{i} = F;
-    Gel{i} = G;
-    Mel{i} = M;
     QUel{i} = QU;
     QU0el{i} = QU0;
 
