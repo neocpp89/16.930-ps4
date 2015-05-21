@@ -1,14 +1,14 @@
 clear all; close all; clc;
-porder = 2;
-ngrid  = 5;
+porder = 1;
+ngrid  = 20;
 
 mesh   = mkmesh_square(ngrid,ngrid,porder);
 master = mkmaster(mesh,2*porder);
 
 kappa = 1;
 c = 0*[10,10];
-param = {kappa,c};
-source = @(p) 10*ones(size(p,1),1);
+param = {kappa,c, @(c,n,h) ones(size(n,1), 1)};
+source = @(p) 2*pi^2*sin(pi*p(:,1)).*sin(pi*p(:,2));
 dbc    = @(p) 0*ones(size(p,1),1);
 
 % HDG solver 

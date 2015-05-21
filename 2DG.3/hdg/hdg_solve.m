@@ -60,15 +60,14 @@ Rel = cell(nel, 1);
 % build global matrix for trace values (global solve)
 for i=1:nel
     % local matrices
-    A = sparse(2*ns, 2*ns);
-    B = sparse(2*ns, ns);
-    C = sparse(2*ns, 3*ns1d);
-    D = sparse(ns, ns);
-    E = sparse(ns, 3*ns1d);
-    M = sparse(3*ns1d, 3*ns1d);
+    A = zeros(2*ns, 2*ns);
+    B = zeros(2*ns, ns);
+    C = zeros(2*ns, 3*ns1d);
+    D = zeros(ns, ns);
+    E = zeros(ns, 3*ns1d);
+    M = zeros(3*ns1d, 3*ns1d);
     F = zeros(ns, 1);
     G = zeros(3*ns1d, 1);
-
     R = zeros(2*ns, 1);
 
     % components of inverse jacobian
@@ -105,7 +104,8 @@ for i=1:nel
 
     % 'F' vector, (f, w)
     xg = phi'*mesh.dgnodes(:,:,i);
-    F(elnn, 1) = phi*(svol.*source(xg));
+    fg = source(xg);
+    F(elnn, 1) = phi*(svol.*fg);
 
     % have to go over edges for C, D, E, M matrices
     for j=1:3
@@ -124,18 +124,6 @@ for i=1:nel
         scale = (master.gw1d .* dsg);
         S = diag(scale);
 
-        if (mesh.f(fidx, 4) < 0)
-            % boundary
-            gd = dbc(xg(edgenn));
-
-            % should actually use a param for this
-            gn = zeros(size(gd));
-            M(tracenn, tracenn) = M(tracenn, tracenn) + phi1d*S*phi1d';
-            G(tracenn) = G(tracenn) + phi1d*S*(gn + gd);
-
-            % don't further modify matrices
-            continue;
-        end
 
         % 'C' matrix, <u_hat, v.n>
         Cx = phi1d*S*diag(nepg(:, 1))*phi1d';
@@ -147,6 +135,7 @@ for i=1:nel
         Dx = -phi1d*S*diag(c(1)*nepg(:, 1))*phi1d';
         Dy = -phi1d*S*diag(c(2)*nepg(:, 2))*phi1d';
         Dtau = phi1d*S*diag(tau(c, nepg, 1/nel))*phi1d';
+        T = phi1d*diag(tau(c, nepg, 1/nel) .* scale)*phi1d';
         D(edgenn, edgenn) = D(edgenn, edgenn) + (Dtau+Dx+Dy);
 
         % 'E' matrix, <(tau - c.n)*u_hat, w>
@@ -154,7 +143,17 @@ for i=1:nel
 
         % 'M' matrix, <tau*u_hat, mu>
         M(tracenn, tracenn) = M(tracenn, tracenn) + Dtau;
+
+        if (mesh.f(fidx, 4) < 0)
+            % boundary
+            gd = dbc(xg(edgenn));
+
+            % should actually use a param for this
+            gn = zeros(size(gd));
+            G(tracenn) = G(tracenn) + phi1d*S*(gn + gd);
+        end
     end
+
 
     % H and R (for global system for u_hat)
     P = [A B; -B' D];
@@ -193,22 +192,42 @@ for i=1:nel
     end
 end
 
-% assemble and solve global matrix for u_hat
+% assemble global matrix for u_hat
 Hglob = sparse(3*ns1d*nel, 3*ns1d*nel);
 Rglob = zeros(3*ns1d*nel, 1);
 for i=1:nel
     nnel = nn(:, i);
     Hglob(nnel, nnel) = Hglob(nnel, nnel) + Hel{i};
-    Rglob(nnel) = Rglob(nnel) + Rel{i};
+    Rglob(nnel, 1) = Rglob(nnel, 1) + Rel{i};
 end
 
-uhath = Hglob \ Rglob;
+% remove BC dofs and solve global matrix
+uhath = dbc(1)*ones(size(Rglob, 1), 1);
+rmidx = [];
+keepidx = [];
+for i=1:nel
+    for j=1:3
+        fidx = abs(mesh.t2f(i,j));
+        tracenn = (j-1)*ns1d + (1:ns1d)';
+        if (mesh.f(fidx, 4) < 0)
+            rmidx = [rmidx; (fidx-1)*ns1d + (1:ns1d)';];
+        else
+            keepidx = [keepidx; (fidx-1)*ns1d + (1:ns1d)';];
+        end
+    end
+end
+keepidx = unique(sort(keepidx));
+Hhat = Hglob(keepidx, keepidx);
+Rhat = Rglob(keepidx);
+uhath(keepidx) = Hhat \ Rhat;
 
 % local solve on each element using traces
 uh = zeros(ns, 1, nel);
 qh = zeros(ns, 2, nel);
 for i=1:nel
     nnel = nn(:, i);
+    QU = QUel{i};
+    QU0 = QU0el{i};
     quvec = QU0 + QU*uhath(nnel, 1);
     qh(:, 1, i) = quvec((1:ns), 1);
     qh(:, 2, i) = quvec((1:ns) + ns, 1);
