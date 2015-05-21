@@ -14,7 +14,7 @@ if nargin<1, siz=0.4; end
 if nargin<2, porder=1; end
 
 fd=@(p) sqrt(sum(p.^2,2))-1;
-fh=@(p) (1 - 4*dcircle(p,0,0,1));
+fh=@(p) (1.2 - 0.2*(p(:,1)+p(:,2)) - 4*dcircle(p,0,0,1));
 [mesh.p,mesh.t] = distmesh2d(fd,fh,siz,[-1,-1;1,1],[]);
 [mesh.p,mesh.t] = fixmesh(mesh.p,mesh.t);
 [mesh.f,mesh.t2f] = mkt2f(mesh.t);

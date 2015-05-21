@@ -80,8 +80,8 @@ for i=1:nel
 
     elnn = 1:ns;
 
-    % 'A' matrix, (kinv*q_h, v)
-    A1d = mm / kappa;
+    % 'A' matrix, (q_h, v)
+    A1d = mm;
     A(elnn, elnn) = A1d; % xx
     A(ns+elnn, ns+elnn) = A1d; % yy
 
@@ -90,6 +90,7 @@ for i=1:nel
     Byy = dphidy*diag(svol)*phi';
     B(elnn, elnn) = Bxx;
     B(ns+elnn, elnn) = Byy;
+    BT = kappa*B'; % since we use q = grad(u) this is not symmetric
 
     % 'D' matrix (interior part), (c*u_h, div(w))
     Dxx = -c(1)*dphidx*diag(svol)*phi';
@@ -149,13 +150,15 @@ for i=1:nel
         end
     end
 
+    CT = kappa*C'; % also not symmetric due to different q
+
 
     % H and R (for global system for u_hat)
-    P = [A B; -B' D];
+    P = [A B; -BT D];
     QU = P \ [C; E];
     QU0 = P \ [R; F];
-    H = M + [C' -ET]*QU;
-    R = G - [C' -ET]*QU0;
+    H = M + [CT -ET]*QU;
+    R = G - [CT -ET]*QU0;
 
     % save the matrices in the cell array
     QUel{i} = QU;

@@ -1,14 +1,14 @@
 clear all; close all; clc;
 % common parameters
-c = 1e2*[1,1];
+c = [1,1];
 source = @(p) ones(size(p,1), 1);
 
 % XXX: should we plot the acutal solution? 
 plot_figures = 1;
 p = [1];
-n = [0:2]; % number of refinements
+n = [0 3]; % number of refinements
 % kappas = [1, 1e-2, 1e-4];
-kappas = [1];
+kappas = [1e-4];
 
 np = numel(p);
 nn = numel(n);
