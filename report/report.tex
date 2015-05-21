@@ -14,10 +14,52 @@
 
 \section{Q1}
 Surprisingly, the answer is provided in the reference material\cite{nguyen}.
+
+We will consider the first order linear convection-reaction equation to keep things simple. We first write the original DG method as
+\begin{align}
+(\sigma u, w) - (\mathbf{c}u, \nabla w) + \langle \widehat{\mathbf{c}u} \cdot \mathbf{n}, w \rangle = (f, w)
+\end{align}
+where the numerical flux is an upwinded flux given by
+\begin{align}
+\widehat{\mathbf{c}u} = \begin{cases}
+    \mathbf{c}u_D & \mbox{ if } F \in \Gamma_{in} \\
+    \mathbf{c}u^+ & \mbox{ if } F \in \mathcal{F} \setminus \partial \Omega \mbox{ and } \mathbf{c} \cdot \mathbf{n} < 0 \\
+    \mathbf{c}u^- & \mbox{ if } F \in \mathcal{F} \setminus \partial \Omega \mbox{ and } \mathbf{c} \cdot \mathbf{n}  > 0 \\
+    \mathbf{c}u & \mbox{ if } F \in \Gamma_{out}
+\end{cases}
+\end{align}
+
+For this same problem, the HDG method reduces to
+\begin{align}
+(\sigma u, w) -(u, \mathbf{c} \cdot \nabla w) + \langle \hat{u} (\mathbf{c} \cdot \mathbf{n}) + \tau (u - \hat{u}), w \rangle = (f, w)
+\end{align}
+where
+\begin{align}
+\hat{u} = \begin{cases}
+    u_D & \mbox{ if } F \in \Gamma_{in} \\
+   \frac{\tau^+ u^+ + \tau^- u^-}{\tau^+ + \tau^-} & \mbox{ if } F \in \mathcal{F} \setminus \partial \Omega \\
+    u & \mbox{ if } F \in \Gamma_{out}.
+\end{cases}
+\end{align}
+
+From inspection, these are equivalent if
+\begin{align}
+    \widehat{\mathbf{c}u} = \hat{u} (\mathbf{c} \cdot \mathbf{n} - \tau) + \tau u
+\end{align}
+for all the cases.
+
 The choice of $\tau$ which reduces to the regular DG method is given by
 \begin{align}
 \tau = \frac{1}{2} \left( | \mathbf{c} \cdot \mathbf{n} | + \mathbf{c} \cdot \mathbf{n} \right).
 \end{align}
+
+Plugging in for the outlet, by definition we have $\tau = \mathbf{c} \cdot \mathbf{n}$.
+Likewise, at the inlet we have $\tau = 0$.
+This directly satisfies those cases as equalities.
+I have run out of time, but performing the substitutions for the interior terms shows you exactly recover the original DG formulation.
+
+\section{Q2}
+I ran out of time and I was not able to prove this.
 
 \section{Code}
 The code is available at \url{http://github.com/neocpp89/16.930-ps4} and should be attached as well.
@@ -111,6 +153,18 @@ h - Order 3 has rate -5.14057.
 1/h - Order 2 has rate -3.09672.
 1/h - Order 3 has rate -4.12233.
 \end{verbatim}
+
+\begin{table}[!ht]
+\caption{Convergence rates for $u$, depending on order of elements and stabilization.}
+\centering
+\begin{tabular}{r | |c c c}
+& p=1 & p=2 & p=3 \\
+\midrule
+h & 1.02711 & 2.0551 & 3.08317 \\
+1 & 2.04695 & 3.07695 & 4.10484 \\ 
+1/h & 2.06656 & 3.13457 & 4.25809
+\end{tabular}
+\end{table}
 
 \clearpage
 
