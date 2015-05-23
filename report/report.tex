@@ -108,51 +108,9 @@ Since the postprocessing step relies on the order of $\mathbf{q}$ and $u$, it th
 \label{fig:cs}
 \end{figure}
 
-I did not have time to convert this to a proper table, but doing a linear fit of the last couple points confirms our code is working for the diffusion case.
+I did not have time to convert this to a nice table, but doing a linear fit of the last couple points confirms our code is working for the diffusion case.
 I went out to 40 elements in addition to the specified 8, 16, and 32 sizes (convergence was higher than I expected with just the 3 meshes, but it appears to have been a transient effect, since the rate went back down by adding the even finer mesh).
 The series below includes this mesh with n=40.
-\begin{verbatim}
-u
-h - Order 1 has rate -1.02711.
-h - Order 2 has rate -2.0551.
-h - Order 3 has rate -3.08317.
-1 - Order 1 has rate -2.04695.
-1 - Order 2 has rate -3.07596.
-1 - Order 3 has rate -4.10484.
-1/h - Order 1 has rate -2.06656.
-1/h - Order 2 has rate -3.13457.
-1/h - Order 3 has rate -4.25809.
-qx
-h - Order 1 has rate -2.05846.
-h - Order 2 has rate -3.08746.
-h - Order 3 has rate -4.11365.
-1 - Order 1 has rate -2.06695.
-1 - Order 2 has rate -3.09276.
-1 - Order 3 has rate -4.12155.
-1/h - Order 1 has rate -1.03401.
-1/h - Order 2 has rate -2.05983.
-1/h - Order 3 has rate -3.08649.
-qy
-h - Order 1 has rate -2.05846.
-h - Order 2 has rate -3.08746.
-h - Order 3 has rate -4.11365.
-1 - Order 1 has rate -2.06695.
-1 - Order 2 has rate -3.09276.
-1 - Order 3 has rate -4.12156.
-1/h - Order 1 has rate -1.03401.
-1/h - Order 2 has rate -2.05983.
-1/h - Order 3 has rate -3.08649.
-u*
-h - Order 1 has rate -3.08705.
-h - Order 2 has rate -4.11205.
-h - Order 3 has rate -5.14057.
-1 - Order 1 has rate -3.08851.
-1 - Order 2 has rate -4.11603.
-1 - Order 3 has rate -5.1444.
-1/h - Order 1 has rate -2.05619.
-1/h - Order 2 has rate -3.09672.
-1/h - Order 3 has rate -4.12233.
-\end{verbatim}
 
 \begin{table}[!ht]
 \caption{Convergence rates for $u$, depending on order of elements and stabilization.}
@@ -166,6 +124,41 @@ h & 1.02711 & 2.0551 & 3.08317 \\
 \end{tabular}
 \end{table}
 
+\begin{table}[!ht]
+\caption{Convergence rates for $q_y$, depending on order of elements and stabilization.}
+\centering
+\begin{tabular}{r | |c c c}
+& p=1 & p=2 & p=3 \\
+\midrule
+h & 2.05846 & 3.08746 & 4.11365 \\
+1 & 2.06695 & 3.09276 & 4.12156 \\
+1/h & 1.03401 & 2.05983 & 3.08649
+\end{tabular}
+\end{table}
+
+\begin{table}[!ht]
+\caption{Convergence rates for $q_x$, depending on order of elements and stabilization.}
+\centering
+\begin{tabular}{r | |c c c}
+& p=1 & p=2 & p=3 \\
+\midrule
+h & 2.05846 & 3.08746 & 4.11365 \\
+1 & 2.06695 & 3.09276 & 4.12156 \\
+1/h & 1.03401 & 2.05983 & 3.08649
+\end{tabular}
+\end{table}
+
+\begin{table}[!ht]
+\caption{Convergence rates for $u^*$, depending on order of elements and stabilization.}
+\centering
+\begin{tabular}{r | |c c c}
+& p=1 & p=2 & p=3 \\
+\midrule
+h & 3.08705 & 4.11205 & 5.14057 \\
+1 & 3.08851 & 4.11603 & 5.1444 \\
+1/h & 2.05619 & 3.09672 & 4.12233
+\end{tabular}
+\end{table}
 \clearpage
 
 \section{Unstructured Mesh}
